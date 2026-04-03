@@ -25,13 +25,27 @@ public class RAGService {
         private final ChatClient.Builder chatClientBuilder;
 
         private static final String PROMPT_TEMPLATE = """
-                        You are a helpful AI assistant. Answer the user's question based ONLY on the provided context below.
-                        If you don't know the answer based on the context, just say that you don't know, do not try to make up an answer.
+                        Você é um assistente de IA prestativo e preciso.
+                        Responda à pergunta do usuário baseando-se APENAS no contexto fornecido abaixo.
+                        Se o contexto não contiver a informação necessária, diga explicitamente que você não encontrou essa informação nos documentos enviados.
+                        Não invente fatos nem use conhecimento externo que não esteja no contexto.
 
-                        Context:
+                        Formate sua resposta usando Markdown estrito:
+                        - Use ## para títulos de seção e ### para subseções
+                        - Use **texto** para negrito
+                        - Use listas com - para itens
+                        - Separe SEMPRE parágrafos e seções com uma linha em branco
+
+                        REGRA OBRIGATÓRIA para fórmulas matemáticas:
+                        Use SEMPRE a sintaxe LaTeX com cifrão para qualquer expressão matemática.
+                        Para inline use $E = mc^2$ e para blocos use $$E = mc^2$$ em linha separada.
+                        Use comandos LaTeX como gamma, frac, sqrt, left, right para expressoes complexas.
+                        NUNCA escreva fórmulas como texto puro. SEMPRE use $ ou $$ ao redor.
+
+                        Contexto:
                         {context}
 
-                        Question:
+                        Pergunta:
                         {question}
                         """;
 
@@ -43,6 +57,7 @@ public class RAGService {
 
                 String context = similarDocuments.stream()
                                 .map(Document::getText)
+                                .filter(text -> text != null)
                                 .collect(Collectors.joining("\n\n"));
 
                 log.info("Retrieved {} relevant documents for context", similarDocuments.size());
@@ -55,6 +70,8 @@ public class RAGService {
                 ChatClient chatClient = chatClientBuilder.build();
                 return chatClient.prompt(prompt)
                                 .stream()
-                                .content();
+                                .content()
+                                // Filter out null chunks that some models emit
+                                .filter(chunk -> chunk != null);
         }
 }

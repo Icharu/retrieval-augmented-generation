@@ -5,8 +5,8 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.*;
-
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import reactor.core.publisher.Flux;
 
 @RestController
@@ -18,8 +18,11 @@ public class ChatController {
     private final RAGService ragService;
 
     @PostMapping(value = "/query", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> query(@RequestBody ChatRequest request) {
-        return ragService.generateAnswer(request.getQuery());
+    public Flux<ServerSentEvent<String>> query(@RequestBody ChatRequest request) {
+        return ragService.generateAnswer(request.getQuery())
+                .map(chunk -> ServerSentEvent.<String>builder()
+                        .data(chunk)
+                        .build());
     }
 
     @Data

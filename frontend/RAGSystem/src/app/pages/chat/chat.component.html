@@ -112,7 +112,8 @@
               ? 'bg-white border border-gray-100 text-gray-700 rounded-2xl rounded-bl-sm shadow-sm' 
               : 'bg-[#0170A4] text-white rounded-2xl rounded-br-sm shadow-md'"
           >
-            {{ msg.text }}
+            <div *ngIf="msg.isBot" [innerHTML]="renderMarkdown(msg.text)" class="markdown-content"></div>
+            <div *ngIf="!msg.isBot">{{ msg.text }}</div>
           </div>
         </div>
       </div>

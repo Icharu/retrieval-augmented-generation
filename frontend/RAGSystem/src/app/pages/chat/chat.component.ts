@@ -1,8 +1,11 @@
-import { Component, inject, signal, ViewChild, ElementRef } from '@angular/core';
+import { Component, inject, signal, ViewChild, ElementRef, SecurityContext } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ChatService } from '../../services/chat.service';
 import { DocumentService } from '../../services/document.service';
+import { marked, Lexer, Parser } from 'marked';
+import markedKatex from 'marked-katex-extension';
 
 export interface ChatMessage {
   text: string;
@@ -19,7 +22,21 @@ export interface ChatMessage {
 export class ChatPageComponent {
   private chatService = inject(ChatService);
   private documentService = inject(DocumentService);
-  
+  private sanitizer = inject(DomSanitizer);
+
+  constructor() {
+    marked.use(markedKatex({
+      throwOnError: false,
+      displayMode: false
+    }));
+
+    marked.use({
+      breaks: true,
+      gfm: true,
+      pedantic: false
+    });
+  }
+
   messages = signal<ChatMessage[]>([]);
   isLoading = signal(false);
   currentQuery = '';
@@ -67,18 +84,15 @@ export class ChatPageComponent {
     if (!this.currentQuery.trim() || this.isLoading()) return;
 
     const query = this.currentQuery.trim();
-    // Add user query immediately
     this.messages.update(m => [...m, { text: query, isBot: false }]);
-    
-    // Add empty bot structure to be appended progressively
     this.messages.update(m => [...m, { text: '', isBot: true }]);
-    
+
     this.currentQuery = '';
     this.isLoading.set(true);
 
     try {
       const stream = this.chatService.streamQuery(query);
-      
+
       let isFirstChunk = true;
 
       for await (const chunk of stream) {
@@ -86,8 +100,7 @@ export class ChatPageComponent {
           this.isLoading.set(false);
           isFirstChunk = false;
         }
-        
-        // Append streamed text cleanly by updating the very last array item
+
         this.messages.update(msgs => {
           const newMsgs = [...msgs];
           const lastMsg = newMsgs[newMsgs.length - 1];
@@ -104,6 +117,20 @@ export class ChatPageComponent {
       console.error('Streaming error:', err);
     } finally {
       this.isLoading.set(false);
+    }
+  }
+
+  renderMarkdown(text: string): SafeHtml {
+    try {
+      // Use the synchronous lexer + parser pipeline — works reliably in all marked v7+ versions
+      // without relying on the deprecated { async: false } option.
+      const tokens = marked.lexer(text);
+      const rawHtml = marked.parser(tokens);
+      return this.sanitizer.bypassSecurityTrustHtml(rawHtml);
+    } catch (e) {
+      console.error('Markdown parsing error', e);
+      const fallback = text.replace(/\n/g, '<br>');
+      return this.sanitizer.bypassSecurityTrustHtml(fallback);
     }
   }
 }
