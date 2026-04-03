@@ -1,0 +1,167 @@
+<div class="flex h-screen bg-gray-50 overflow-hidden font-sans">
+  
+  <!-- Sidebar -->
+  <aside class="w-80 bg-[#1D3557] flex flex-col shadow-2xl transition-all duration-300 z-10 text-white">
+    <div class="px-6 py-8 border-b border-[#28657F] text-center">
+      <div class="mx-auto w-16 h-16 bg-gradient-to-tr from-[#6C63FF] to-[#A78BFA] rounded-2xl shadow-lg flex items-center justify-center mb-4 border border-[#A78BFA] border-opacity-30">
+        <span class="text-3xl">📚</span>
+      </div>
+      <h1 class="text-2xl font-bold tracking-wide">Leia.Tutor</h1>
+      <p class="text-sm mt-1 text-[#A78BFA] font-medium">Language Learning Assistant</p>
+    </div>
+
+    <!-- Navigation -->
+    <div class="p-4 border-b border-[#28657F]">
+      <h3 class="text-xs uppercase tracking-wider font-bold text-[#4AA3D7] mb-3 px-2">Navigation</h3>
+      <nav class="space-y-1">
+        <a routerLink="/chat" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-gray-300 hover:bg-[#074A6A] hover:text-white transition-all duration-200 group">
+          <svg class="w-5 h-5 text-[#4AA3D7] group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+          </svg>
+          <span class="font-medium text-sm">RAG Chat</span>
+        </a>
+        <a routerLink="/tutor" class="flex items-center space-x-3 px-4 py-2.5 rounded-xl bg-[#074A6A] text-white transition-all duration-200 border border-[#28657F]">
+          <svg class="w-5 h-5 text-[#A78BFA]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          </svg>
+          <span class="font-medium text-sm">Language Tutor</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Language Selector -->
+    <div class="p-6 flex-1 flex flex-col overflow-y-auto">
+      <h3 class="text-xs uppercase tracking-wider font-bold text-[#A78BFA] mb-3">Target Language</h3>
+      
+      <div class="space-y-1.5 language-list">
+        <button *ngFor="let lang of languages"
+          (click)="selectLanguage(lang)"
+          class="w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 text-left group"
+          [ngClass]="selectedLanguage().code === lang.code 
+            ? 'bg-gradient-to-r from-[#6C63FF]/20 to-[#A78BFA]/20 border border-[#A78BFA]/40 text-white shadow-sm' 
+            : 'text-gray-300 hover:bg-[#074A6A] hover:text-white border border-transparent'"
+        >
+          <span class="text-xl flex-shrink-0">{{ lang.flag }}</span>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium truncate">{{ lang.name }}</div>
+            <div class="text-xs opacity-60 truncate">{{ lang.nativeName }}</div>
+          </div>
+          <div *ngIf="selectedLanguage().code === lang.code" class="w-2 h-2 rounded-full bg-[#A78BFA] flex-shrink-0"></div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="p-6 text-xs text-center text-[#28657F] font-medium border-t border-[#074A6A]">
+      &copy; 2026 Leia.AI Systems
+    </div>
+  </aside>
+
+  <!-- Main Chat Area -->
+  <main class="flex-1 flex flex-col bg-white overflow-hidden relative shadow-[inset_1px_0_10px_rgba(0,0,0,0.05)]">
+    
+    <!-- Header -->
+    <header class="h-16 border-b border-gray-100 flex items-center px-8 bg-white/80 backdrop-blur z-10 justify-between">
+      <div class="flex items-center space-x-3">
+        <span class="relative flex h-3 w-3">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
+        </span>
+        <span class="text-sm font-semibold text-gray-700">Tutor mode — Learning <span class="text-[#6C63FF] font-bold">{{ selectedLanguage().flag }} {{ selectedLanguage().name }}</span></span>
+      </div>
+    </header>
+
+    <!-- Chat Messages -->
+    <div class="flex-1 overflow-y-auto p-8 space-y-6 scroll-smooth bg-[#f8fbfd]">
+      
+      <!-- Empty State -->
+      <div *ngIf="messages().length === 0" class="h-full flex flex-col items-center justify-center text-center max-w-lg mx-auto pb-10">
+        <div class="w-24 h-24 bg-gradient-to-tr from-[#6C63FF] to-[#A78BFA] rounded-[2rem] flex items-center justify-center mb-8 shadow-xl shadow-purple-900/10 transform transition hover:scale-105 duration-500">
+          <span class="text-5xl">🌍</span>
+        </div>
+        <h2 class="text-3xl font-extrabold text-[#1D3557] mb-3 tracking-tight">Start Learning!</h2>
+        <p class="text-gray-500 font-medium text-[15px] leading-relaxed">
+          Type a word or phrase and select a target language from the sidebar. I'll translate it, explain the grammar, and show you the <strong>top 10 most common expressions</strong> using it.
+        </p>
+        <div class="mt-6 flex flex-wrap justify-center gap-2">
+          <span class="px-3 py-1.5 bg-purple-50 text-[#6C63FF] rounded-full text-xs font-semibold border border-purple-100">🌐 Translation</span>
+          <span class="px-3 py-1.5 bg-purple-50 text-[#6C63FF] rounded-full text-xs font-semibold border border-purple-100">📖 Grammar</span>
+          <span class="px-3 py-1.5 bg-purple-50 text-[#6C63FF] rounded-full text-xs font-semibold border border-purple-100">🗣️ Top 10 Expressions</span>
+          <span class="px-3 py-1.5 bg-purple-50 text-[#6C63FF] rounded-full text-xs font-semibold border border-purple-100">🎭 Formal vs Informal</span>
+          <span class="px-3 py-1.5 bg-purple-50 text-[#6C63FF] rounded-full text-xs font-semibold border border-purple-100">💡 Cultural Tips</span>
+        </div>
+      </div>
+
+      <!-- Message Bubbles -->
+      <div *ngFor="let msg of messages()" class="flex w-full" [ngClass]="{'justify-end': !msg.isBot}">
+        <div class="flex max-w-[85%] lg:max-w-[75%] space-x-4 items-end" [ngClass]="{'flex-row-reverse space-x-reverse': !msg.isBot}">
+          
+          <!-- Avatar Bot -->
+          <div *ngIf="msg.isBot" class="w-9 h-9 rounded-full bg-gradient-to-tr from-[#6C63FF] to-[#A78BFA] flex items-center justify-center shadow-md flex-shrink-0">
+             <span class="text-lg">📚</span>
+          </div>
+
+          <!-- Avatar User -->
+          <div *ngIf="!msg.isBot" class="w-9 h-9 rounded-full bg-[#1D3557] flex items-center justify-center shadow-md flex-shrink-0">
+            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" fill-rule="evenodd"></path></svg>
+          </div>
+
+          <!-- Bubble -->
+          <div 
+            class="px-5 py-4 shadow-sm text-[15px] leading-relaxed transition-all"
+            [ngClass]="msg.isBot 
+              ? 'bg-white border border-gray-100 text-gray-700 rounded-2xl rounded-bl-sm shadow-sm' 
+              : 'bg-gradient-to-r from-[#6C63FF] to-[#7C73FF] text-white rounded-2xl rounded-br-sm shadow-md'"
+          >
+            <div *ngIf="msg.isBot" [innerHTML]="renderMarkdown(msg.text)" class="markdown-content"></div>
+            <div *ngIf="!msg.isBot">{{ msg.text }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading Typing Indicator -->
+      <div *ngIf="isLoading()" class="flex w-full justify-start mt-4">
+        <div class="flex max-w-[80%] space-x-4 items-end">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-[#6C63FF] to-[#A78BFA] flex items-center justify-center shadow-md flex-shrink-0 animate-pulse">
+             <span class="text-lg">📚</span>
+          </div>
+          <div class="bg-white border border-gray-100 rounded-2xl rounded-bl-sm px-5 py-4 shadow-sm flex items-center space-x-2">
+            <div class="w-2 h-2 bg-[#A78BFA] rounded-full animate-bounce"></div>
+            <div class="w-2 h-2 bg-[#6C63FF] rounded-full animate-bounce" style="animation-delay:-0.15s"></div>
+            <div class="w-2 h-2 bg-[#4C3FD9] rounded-full animate-bounce" style="animation-delay:-0.3s"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Input Area -->
+    <div class="p-6 bg-white border-t border-gray-100 w-full relative z-10 bg-opacity-95 backdrop-blur">
+      <div class="max-w-4xl mx-auto relative shadow-[0_2px_15px_-3px_rgba(108,99,255,0.15)] rounded-2xl border border-gray-200 focus-within:ring-2 focus-within:ring-[#A78BFA] focus-within:border-[#A78BFA] transition-all duration-300 bg-white flex items-center p-1.5">
+        <form (ngSubmit)="sendMessage()" class="flex-1 flex items-center w-full">
+          <span class="pl-4 text-xl flex-shrink-0">{{ selectedLanguage().flag }}</span>
+          <input 
+            type="text" 
+            [(ngModel)]="currentQuery" 
+            name="query" 
+            [placeholder]="'Type a word or phrase to learn in ' + selectedLanguage().name + '...'" 
+            class="flex-1 bg-transparent border-none px-4 py-3 focus:outline-none text-gray-800 font-medium placeholder-gray-400"
+            [disabled]="isLoading()"
+            autocomplete="off"
+          />
+          <button 
+            type="submit" 
+            [disabled]="isLoading() || !currentQuery.trim()" 
+            class="m-1 p-2.5 rounded-xl bg-gradient-to-r from-[#6C63FF] to-[#A78BFA] text-white disabled:opacity-40 disabled:from-gray-300 disabled:to-gray-400 disabled:text-gray-500 transition-all shadow-md hover:shadow-lg flex items-center justify-center focus:outline-none"
+          >
+            <svg class="w-5 h-5 transform rotate-90 translate-x-[1px]" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path>
+            </svg>
+          </button>
+        </form>
+      </div>
+      <div class="text-center mt-4 text-xs text-gray-400 font-medium">Leia.Tutor — Translate, learn grammar, and discover the most common expressions.</div>
+    </div>
+
+  </main>
+</div>

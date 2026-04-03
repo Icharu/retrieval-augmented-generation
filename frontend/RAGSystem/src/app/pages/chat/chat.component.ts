@@ -1,6 +1,7 @@
 import { Component, inject, signal, ViewChild, ElementRef, SecurityContext } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ChatService } from '../../services/chat.service';
 import { DocumentService } from '../../services/document.service';
@@ -15,7 +16,7 @@ export interface ChatMessage {
 @Component({
   selector: 'app-chat-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.css']
 })
