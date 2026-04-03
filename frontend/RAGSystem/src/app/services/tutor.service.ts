@@ -60,4 +60,57 @@ export class TutorService {
       if (text && text.trim() !== '[DONE]') yield text;
     }
   }
+
+  async *streamAudioQuery(file: File, targetLanguage: string): AsyncGenerator<string, void, unknown> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('targetLanguage', targetLanguage);
+
+    const response = await fetch(`${this.apiUrl}/audio`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'text/event-stream'
+      },
+      body: formData
+    });
+
+    if (!response.body) throw new Error('No response body');
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      let lineEnd: number;
+      while ((lineEnd = buffer.indexOf('\n')) !== -1) {
+        const line = buffer.slice(0, lineEnd);
+        buffer = buffer.slice(lineEnd + 1);
+
+        if (line.trim() === '') continue;
+
+        if (line.startsWith('data:')) {
+          const text = line.slice(5);
+
+          if (text.trim() === '[DONE]') continue;
+
+          if (text === '') {
+            yield '\n';
+            continue;
+          }
+
+          yield text;
+        }
+      }
+    }
+
+    if (buffer.startsWith('data:')) {
+      const text = buffer.slice(5);
+      if (text && text.trim() !== '[DONE]') yield text;
+    }
+  }
 }

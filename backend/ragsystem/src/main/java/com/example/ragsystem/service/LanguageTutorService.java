@@ -7,6 +7,12 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.stereotype.Service;
 
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.ai.openai.OpenAiAudioTranscriptionModel;
+import org.springframework.ai.openai.OpenAiAudioTranscriptionOptions;
+import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
+import org.springframework.ai.audio.transcription.AudioTranscriptionResponse;
+import org.springframework.core.io.Resource;
 import java.util.Map;
 
 import reactor.core.publisher.Flux;
@@ -17,6 +23,7 @@ import reactor.core.publisher.Flux;
 public class LanguageTutorService {
 
         private final ChatClient.Builder chatClientBuilder;
+        private final OpenAiAudioTranscriptionModel transcriptionModel;
 
         /**
          * System Prompt Engineering (SPE) — Language Tutor Persona.
@@ -64,6 +71,11 @@ public class LanguageTutorService {
                 - Provide a fun fact or cultural tip about the use of this word or expression in the context of native speakers of {targetLanguage}.
                 - Keep your explanation in English.
 
+                ## 6. 🏆 CEFR Language Rating
+                - If the user sent a phrase or sentence, rate their language level from A1, A2, B1, B2, C1, C2 based on the input complexity and structure.
+                - Mention what they could do to improve to the next level.
+                - Format the rating as **Level: <Rating>** (e.g., **Level: B2**).
+
                 FORMATTING RULES:
                 - Use strict Markdown with ## for main headers and ### for subheaders.
                 - Use **bold** for key terms and *italics* for examples.
@@ -90,7 +102,6 @@ public class LanguageTutorService {
                                 "targetLanguage", targetLanguage,
                                 "query", query));
 
-                // Build the prompt with system + user messages
                 Prompt prompt = new Prompt(
                                 new org.springframework.ai.chat.messages.SystemMessage(systemMessage),
                                 new org.springframework.ai.chat.messages.UserMessage(userMessage));
@@ -100,5 +111,23 @@ public class LanguageTutorService {
                                 .stream()
                                 .content()
                                 .filter(chunk -> chunk != null);
+        }
+
+        public Flux<String> processAudioAndGenerateResponse(MultipartFile file, String targetLanguage) {
+            String transcribedText;
+            try {
+                log.info("Processing uploaded audio file: {} (Size: {} bytes) for language: {}", file.getOriginalFilename(), file.getSize(), targetLanguage);
+                
+                OpenAiAudioTranscriptionOptions options = OpenAiAudioTranscriptionOptions.builder().build();
+                AudioTranscriptionResponse response = transcriptionModel.call(new AudioTranscriptionPrompt(file.getResource(), options));
+                transcribedText = response.getResult().getOutput();
+                
+                log.info("Transcribed Text: {}", transcribedText);
+            } catch (Exception e) {
+                log.error("Failed to process audio", e);
+                return Flux.just("Error parsing audio: " + e.getMessage());
+            }
+            
+            return generateTutorResponse(transcribedText, targetLanguage);
         }
 }
